@@ -11,6 +11,7 @@ import {
 import { supermemoryTools as aiSdkTools } from "@supermemory/tools/ai-sdk"
 import type { SupermemoryToolsConfig } from "@supermemory/tools"
 import type { PlaygroundApiKeys } from "./api-keys"
+import { buildConversationContextQuery } from "./conversation-context"
 import {
 	buildMiddlewareMemoryDebug,
 	type MemoryDebugEntry,
@@ -159,23 +160,6 @@ function extractAiSdkToolTrace(
 		}
 	}
 	return trace
-}
-
-function getConversationContext(messages: ChatMessage[]): string {
-	const lastUserIndex = messages.findLastIndex((message) => message.role === "user")
-	if (lastUserIndex < 0) return ""
-
-	return messages
-		.slice(0, lastUserIndex + 1)
-		.filter(
-			(message): message is ChatMessage =>
-				message.role === "user" || message.role === "assistant",
-		)
-		.map((message) => {
-			const role = message.role === "user" ? "User" : "Assistant"
-			return `${role}: ${message.content}`
-		})
-		.join("\n\n")
 }
 
 async function chatAiSdkMiddleware(
@@ -433,7 +417,7 @@ export async function runTypeScriptChat(
 			request.containerTag,
 			request.conversationId,
 			memoryMode,
-			getConversationContext(request.messages),
+			buildConversationContextQuery(request.messages),
 			middlewareConfig,
 			request.sdkId === "ts-ai-sdk-middleware"
 				? {

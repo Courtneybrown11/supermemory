@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { ApiKeysPanel } from "@/components/ApiKeysPanel"
 import { ContextPanel } from "@/components/ContextPanel"
 import { ToolsReferencePanel } from "@/components/ToolsReferencePanel"
+import { buildConversationContextQuery } from "@/lib/conversation-context"
 import type { MemoryDebugEntry } from "@/lib/context-api"
 import {
 	DEFAULT_MIDDLEWARE_CONFIG,
@@ -31,25 +32,6 @@ type DebugMessage = {
 }
 
 type DisplayMessage = UserOrAssistantMessage | ToolMessage | DebugMessage
-
-function buildConversationContext(messages: DisplayMessage[]): string {
-	const conversation = messages.filter(
-		(message): message is UserOrAssistantMessage =>
-			message.kind === "user" || message.kind === "assistant",
-	)
-	const lastUserIndex = conversation.findLastIndex(
-		(message) => message.kind === "user",
-	)
-	if (lastUserIndex < 0) return ""
-
-	return conversation
-		.slice(0, lastUserIndex + 1)
-		.map((message) => {
-			const role = message.kind === "user" ? "User" : "Assistant"
-			return `${role}: ${message.content}`
-		})
-		.join("\n\n")
-}
 
 export default function AgentPlaygroundPage() {
 	const [sdks, setSdks] = useState(CHAT_SDK_REGISTRY)
@@ -87,7 +69,18 @@ export default function AgentPlaygroundPage() {
 	const [leftPanel, setLeftPanel] = useState<"sdks" | "tools">("sdks")
 
 	const conversationContext = useMemo(
-		() => buildConversationContext(messages),
+		() =>
+			buildConversationContextQuery(
+				messages
+					.filter(
+						(message): message is UserOrAssistantMessage =>
+							message.kind === "user" || message.kind === "assistant",
+					)
+					.map((message) => ({
+						role: message.kind,
+						content: message.content,
+					})),
+			),
 		[messages],
 	)
 

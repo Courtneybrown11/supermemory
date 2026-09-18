@@ -199,7 +199,7 @@ export const buildMemoriesText = async (
  */
 export interface GenericMessage {
 	role: string
-	content: string | Array<{ type: string; text?: string }>
+	content: unknown
 }
 
 const extractTextContent = (content: unknown): string => {
@@ -265,7 +265,13 @@ export const extractQueryText = (
 		return ""
 	}
 
-	const lastUserIndex = messages.findLastIndex((message) => message.role === "user")
+	let lastUserIndex = -1
+	for (let index = messages.length - 1; index >= 0; index -= 1) {
+		if (messages[index]?.role === "user") {
+			lastUserIndex = index
+			break
+		}
+	}
 	if (lastUserIndex < 0) return ""
 
 	return messages
