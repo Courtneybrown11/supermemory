@@ -20,7 +20,8 @@ import type { LanguageModelCallOptions } from "./util"
 /**
  * Extracts the query text from params based on mode.
  * For "profile" mode, returns empty string (no query needed).
- * For "query" or "full" mode, extracts the last user message text.
+ * For "query" or "full" mode, extracts the conversation context up to the
+ * current user turn.
  *
  * @param params - The language model call options
  * @param mode - The memory retrieval mode

@@ -8,6 +8,7 @@ import {
 	toConversationImageUrl,
 } from "../conversations-client"
 import {
+	extractQueryText,
 	replaceMemoryContext,
 	stripMemoryContext,
 	wrapMemoryContext,
@@ -526,7 +527,13 @@ const addSystemPrompt = async (
 ) => {
 	const instructionPromptExists = messages.some(isChatInstructionMessage)
 
-	const queryText = mode !== "profile" ? getLastUserMessage(messages) : ""
+	const queryText = extractQueryText(
+		messages as Array<{
+			role: string
+			content: string | Array<{ type: string; text?: string }>
+		}>,
+		mode,
+	)
 
 	const memoriesResponse = await supermemoryProfileSearch(
 		containerTag,
@@ -582,7 +589,7 @@ const addSystemPrompt = async (
 			: ""
 	const searchResultsMemories =
 		mode !== "profile" && deduplicated.searchResults.length > 0
-			? `Search results for user's recent message: \n${deduplicated.searchResults
+			? `Search results for the current conversation context: \n${deduplicated.searchResults
 					.map((memory) => `- ${memory}`)
 					.join("\n")}`
 			: ""
@@ -856,7 +863,7 @@ export function createOpenAIMiddleware(
 				: ""
 		const searchResultsMemories =
 			mode !== "profile" && deduplicated.searchResults.length > 0
-				? `Search results for user's ${context === "chat" ? "recent message" : "input"}: \n${deduplicated.searchResults
+				? `Search results for the current conversation context: \n${deduplicated.searchResults
 						.map((memory) => `- ${memory}`)
 						.join("\n")}`
 				: ""
@@ -937,7 +944,23 @@ export function createOpenAIMiddleware(
 
 		if (shouldPersist) operations.push(persistResponsesInput())
 
-		const queryText = mode !== "profile" ? input : ""
+		const queryText =
+			typeof cleanedInput === "string"
+				? mode !== "profile"
+					? cleanedInput.trim()
+					: ""
+				: Array.isArray(cleanedInput)
+					? extractQueryText(
+							cleanedInput.flatMap((item) => {
+								if (!item || typeof item !== "object") return []
+								const message = item as { role?: unknown; content?: unknown }
+								return typeof message.role === "string"
+									? [{ role: message.role, content: message.content }]
+									: []
+							}),
+							mode,
+						)
+					: ""
 		operations.push(
 			searchAndFormatMemories(
 				queryText,

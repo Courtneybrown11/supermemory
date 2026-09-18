@@ -159,7 +159,7 @@ export const buildMemoriesText = async (
 			: ""
 	const generalSearchMemories =
 		mode !== "profile" && deduplicated.searchResults.length > 0
-			? `Search results for user's recent message: \n${deduplicated.searchResults
+			? `Search results for the current conversation context: \n${deduplicated.searchResults
 					.map((memory) => `- ${memory}`)
 					.join("\n")}`
 			: ""
@@ -202,10 +202,54 @@ export interface GenericMessage {
 	content: string | Array<{ type: string; text?: string }>
 }
 
+const extractTextContent = (content: unknown): string => {
+	if (typeof content === "string") {
+		return content.trim()
+	}
+
+	if (Array.isArray(content)) {
+		return content
+			.filter(
+				(part): part is { type: string; text?: string } =>
+					typeof part === "object" &&
+					part !== null &&
+					"type" in part &&
+					("text" in part || part.type === "text" || part.type === "input_text"),
+			)
+			.filter((part) => part.type === "text" || part.type === "input_text")
+			.map((part) => part.text?.trim() || "")
+			.filter(Boolean)
+			.join(" ")
+	}
+
+	const objContent = content as
+		| {
+				content?: string
+				parts?: Array<{ type: string; text?: string }>
+		  }
+		| null
+		| undefined
+	if (typeof objContent === "object" && objContent !== null) {
+		if (typeof objContent.content === "string") {
+			return objContent.content.trim()
+		}
+		if (Array.isArray(objContent.parts)) {
+			return objContent.parts
+				.filter((part) => part.type === "text" || part.type === "input_text")
+				.map((part) => part.text?.trim() || "")
+				.filter(Boolean)
+				.join(" ")
+		}
+	}
+
+	return ""
+}
+
 /**
  * Extracts the query text from messages based on mode.
  * For "profile" mode, returns empty string (no query needed).
- * For "query" or "full" mode, extracts the last user message text.
+ * For "query" or "full" mode, extracts the conversation context up to the
+ * current user turn.
  *
  * This is a framework-agnostic version that works with any message array.
  *
@@ -221,42 +265,19 @@ export const extractQueryText = (
 		return ""
 	}
 
-	const userMessage = messages
-		.slice()
-		.reverse()
-		.find((msg) => msg.role === "user")
+	const lastUserIndex = messages.findLastIndex((message) => message.role === "user")
+	if (lastUserIndex < 0) return ""
 
-	const content = userMessage?.content
-	if (!content) return ""
-
-	if (typeof content === "string") {
-		return content
-	}
-
-	if (Array.isArray(content)) {
-		return content
-			.filter((part) => part.type === "text")
-			.map((part) => part.text || "")
-			.join(" ")
-	}
-
-	const objContent = content as unknown as {
-		content?: string
-		parts?: Array<{ type: string; text?: string }>
-	}
-	if (typeof objContent === "object" && objContent !== null) {
-		if ("content" in objContent && typeof objContent.content === "string") {
-			return objContent.content
-		}
-		if ("parts" in objContent && Array.isArray(objContent.parts)) {
-			return objContent.parts
-				.filter((part) => part.type === "text")
-				.map((part) => part.text || "")
-				.join(" ")
-		}
-	}
-
-	return ""
+	return messages
+		.slice(0, lastUserIndex + 1)
+		.flatMap((message) => {
+			if (message.role !== "user" && message.role !== "assistant") return []
+			const content = extractTextContent(message.content)
+			if (!content) return []
+			const role = message.role === "user" ? "User" : "Assistant"
+			return [`${role}: ${content}`]
+		})
+		.join("\n\n")
 }
 
 /**
@@ -277,34 +298,5 @@ export const getLastUserMessageText = (
 		return undefined
 	}
 
-	const content = lastUserMessage.content
-
-	if (typeof content === "string") {
-		return content
-	}
-
-	if (Array.isArray(content)) {
-		return content
-			.filter((part) => part.type === "text")
-			.map((part) => part.text || "")
-			.join(" ")
-	}
-
-	const objContent = content as unknown as {
-		content?: string
-		parts?: Array<{ type: string; text?: string }>
-	}
-	if (typeof objContent === "object" && objContent !== null) {
-		if ("content" in objContent && typeof objContent.content === "string") {
-			return objContent.content
-		}
-		if ("parts" in objContent && Array.isArray(objContent.parts)) {
-			return objContent.parts
-				.filter((part) => part.type === "text")
-				.map((part) => part.text || "")
-				.join(" ")
-		}
-	}
-
-	return undefined
+	return extractTextContent(lastUserMessage.content) || undefined
 }

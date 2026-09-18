@@ -161,8 +161,21 @@ function extractAiSdkToolTrace(
 	return trace
 }
 
-function lastUserMessage(messages: ChatMessage[]): string {
-	return [...messages].reverse().find((m) => m.role === "user")?.content ?? ""
+function getConversationContext(messages: ChatMessage[]): string {
+	const lastUserIndex = messages.findLastIndex((message) => message.role === "user")
+	if (lastUserIndex < 0) return ""
+
+	return messages
+		.slice(0, lastUserIndex + 1)
+		.filter(
+			(message): message is ChatMessage =>
+				message.role === "user" || message.role === "assistant",
+		)
+		.map((message) => {
+			const role = message.role === "user" ? "User" : "Assistant"
+			return `${role}: ${message.content}`
+		})
+		.join("\n\n")
 }
 
 async function chatAiSdkMiddleware(
@@ -420,7 +433,7 @@ export async function runTypeScriptChat(
 			request.containerTag,
 			request.conversationId,
 			memoryMode,
-			lastUserMessage(request.messages),
+			getConversationContext(request.messages),
 			middlewareConfig,
 			request.sdkId === "ts-ai-sdk-middleware"
 				? {

@@ -102,7 +102,7 @@ function getEffectiveCustomId(
  * Input processor that injects memories into the system prompt before LLM calls.
  *
  * This processor runs once at the start of agent execution (processInput).
- * It fetches relevant memories from Supermemory based on the user's message
+ * It fetches relevant memories from Supermemory based on the current conversation context
  * and injects them into the system messages.
  *
  * @example

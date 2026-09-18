@@ -32,6 +32,25 @@ type DebugMessage = {
 
 type DisplayMessage = UserOrAssistantMessage | ToolMessage | DebugMessage
 
+function buildConversationContext(messages: DisplayMessage[]): string {
+	const conversation = messages.filter(
+		(message): message is UserOrAssistantMessage =>
+			message.kind === "user" || message.kind === "assistant",
+	)
+	const lastUserIndex = conversation.findLastIndex(
+		(message) => message.kind === "user",
+	)
+	if (lastUserIndex < 0) return ""
+
+	return conversation
+		.slice(0, lastUserIndex + 1)
+		.map((message) => {
+			const role = message.kind === "user" ? "User" : "Assistant"
+			return `${role}: ${message.content}`
+		})
+		.join("\n\n")
+}
+
 export default function AgentPlaygroundPage() {
 	const [sdks, setSdks] = useState(CHAT_SDK_REGISTRY)
 	const [hasSupermemoryKey, setHasSupermemoryKey] = useState(false)
@@ -67,12 +86,10 @@ export default function AgentPlaygroundPage() {
 	const [contextRefreshKey, setContextRefreshKey] = useState(0)
 	const [leftPanel, setLeftPanel] = useState<"sdks" | "tools">("sdks")
 
-	const lastUserMessage = useMemo(() => {
-		const users = messages.filter(
-			(m): m is UserOrAssistantMessage => m.kind === "user",
-		)
-		return users.at(-1)?.content ?? ""
-	}, [messages])
+	const conversationContext = useMemo(
+		() => buildConversationContext(messages),
+		[messages],
+	)
 
 	const selectedSdk = useMemo(
 		() => sdks.find((s) => s.id === sdkId),
@@ -522,7 +539,7 @@ export default function AgentPlaygroundPage() {
 				<aside className="hidden w-80 shrink-0 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900/20 p-3 xl:flex xl:w-96 xl:flex-col min-h-0">
 					<ContextPanel
 						containerTag={containerTag}
-						lastUserMessage={lastUserMessage}
+						conversationContext={conversationContext}
 						refreshKey={contextRefreshKey}
 						supermemoryApiKey={supermemoryApiKey}
 						supermemoryKeyReady={supermemoryKeyReady}

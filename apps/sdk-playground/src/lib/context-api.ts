@@ -107,11 +107,11 @@ function normalizeSearchResults(searchResults: unknown): unknown[] {
 }
 
 export function resolveProfileQuery(
-	lastUserMessage: string,
+	conversationContext: string,
 	mode: "profile" | "query" | "full",
 ): string | undefined {
 	if (mode === "profile") return undefined
-	return lastUserMessage || undefined
+	return conversationContext || undefined
 }
 
 async function fetchProfileContext(
@@ -192,7 +192,7 @@ export async function buildMiddlewareMemoryDebug(
 	containerTag: string,
 	conversationId: string,
 	memoryMode: MemoryMode,
-	lastUserMessage: string,
+	conversationContext: string,
 	middlewareConfig: Partial<MiddlewareRuntimeConfig> | undefined,
 	sdk: {
 		flavor: MiddlewareFlavor
@@ -203,7 +203,7 @@ export async function buildMiddlewareMemoryDebug(
 	signal?: AbortSignal,
 ): Promise<MemoryDebugEntry[]> {
 	const config = normalizeMiddlewareConfig(middlewareConfig)
-	const query = resolveProfileQuery(lastUserMessage, memoryMode)
+	const query = resolveProfileQuery(conversationContext, memoryMode)
 
 	try {
 		const apiKey =

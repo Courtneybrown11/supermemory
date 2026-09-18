@@ -360,7 +360,7 @@ export const enhanceMessagesWithMemories = async (
 			})
 			const generalSearchMemories =
 				deduplicated.searchResults.length > 0
-					? `Search results for user's recent message: \n${deduplicated.searchResults
+					? `Search results for the current conversation context: \n${deduplicated.searchResults
 							.map((memory) => `- ${memory}`)
 							.join("\n")}`
 					: ""
