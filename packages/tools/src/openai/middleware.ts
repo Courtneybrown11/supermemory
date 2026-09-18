@@ -530,7 +530,7 @@ const addSystemPrompt = async (
 	const queryText = extractQueryText(
 		messages as Array<{
 			role: string
-			content: string | Array<{ type: string; text?: string }>
+			content: unknown
 		}>,
 		mode,
 	)

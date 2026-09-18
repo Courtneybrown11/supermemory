@@ -286,6 +286,10 @@ export const extractQueryText = (
 		.join("\n\n")
 }
 
+export const buildConversationContextQuery = (
+	messages: GenericMessage[],
+): string => extractQueryText(messages, "full")
+
 /**
  * Extracts text content from the last user message in a message array.
  *
