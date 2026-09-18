@@ -947,7 +947,7 @@ export function createOpenAIMiddleware(
 		const queryText =
 			typeof cleanedInput === "string"
 				? mode !== "profile"
-					? cleanedInput.trim()
+					? extractQueryText([{ role: "user", content: cleanedInput }], mode)
 					: ""
 				: Array.isArray(cleanedInput)
 					? extractQueryText(
