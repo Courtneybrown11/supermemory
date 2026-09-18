@@ -302,6 +302,46 @@ describe("Unit: withSupermemory", () => {
 			expect(result2.prompt[0]?.content).toContain("Memory from call 2")
 		})
 
+		it("should query with the conversation context through the latest user turn", async () => {
+			fetchMock.mockResolvedValue({
+				ok: true,
+				json: () => Promise.resolve(createMockProfileResponse(["Context memory"])),
+			})
+
+			const ctx = createSupermemoryContext({
+				containerTag: TEST_CONFIG.containerTag,
+				apiKey: TEST_CONFIG.apiKey,
+				customId: "test-id",
+				mode: "full",
+			})
+
+			await transformParamsWithMemory(
+				{
+					prompt: [
+						{
+							role: "user",
+							content: [{ type: "text", text: "My name is Alex." }],
+						},
+						{
+							role: "assistant",
+							content: [{ type: "text", text: "Nice to meet you, Alex." }],
+						},
+						{
+							role: "user",
+							content: [{ type: "text", text: "What is my name?" }],
+						},
+					],
+				},
+				ctx,
+			)
+
+			const request = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined
+			const body = JSON.parse(String(request?.body ?? "{}"))
+			expect(body.q).toBe(
+				"User: My name is Alex.\n\nAssistant: Nice to meet you, Alex.\n\nUser: What is my name?",
+			)
+		})
+
 		it("replaces the prior SDK memory block instead of accumulating context", async () => {
 			fetchMock.mockResolvedValue({
 				ok: true,

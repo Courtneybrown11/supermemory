@@ -9,6 +9,7 @@ export {
 } from "../shared"
 
 import {
+	extractQueryText as extractSharedQueryText,
 	type Logger,
 	type MemoryPromptData,
 	replaceMemoryContext,
@@ -20,7 +21,8 @@ import type { LanguageModelCallOptions } from "./util"
 /**
  * Extracts the query text from params based on mode.
  * For "profile" mode, returns empty string (no query needed).
- * For "query" or "full" mode, extracts the last user message text.
+ * For "query" or "full" mode, extracts the conversation context up to the
+ * current user turn.
  *
  * @param params - The language model call options
  * @param mode - The memory retrieval mode
@@ -30,27 +32,13 @@ export const extractQueryText = (
 	params: LanguageModelCallOptions,
 	mode: "profile" | "query" | "full",
 ): string => {
-	if (mode === "profile") {
-		return ""
-	}
-
-	const userMessage = params.prompt
-		.slice()
-		.reverse()
-		.find((prompt: { role: string }) => prompt.role === "user")
-
-	const content = userMessage?.content
-	if (!content) return ""
-
-	if (typeof content === "string") {
-		return content
-	}
-
-	// biome-ignore lint/suspicious/noExplicitAny: Union type compatibility between V2 and V3
-	return (content as any[])
-		.filter((part) => part.type === "text")
-		.map((part) => part.text || "")
-		.join(" ")
+	return extractSharedQueryText(
+		params.prompt as Array<{
+			role: string
+			content: string | Array<{ type: string; text?: string }>
+		}>,
+		mode,
+	)
 }
 
 /**

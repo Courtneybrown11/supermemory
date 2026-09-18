@@ -7,13 +7,13 @@ type ContextDocument = ContainerContext["documents"][number]
 
 export function ContextPanel({
 	containerTag,
-	lastUserMessage,
+	conversationContext,
 	refreshKey,
 	supermemoryApiKey,
 	supermemoryKeyReady,
 }: {
 	containerTag: string
-	lastUserMessage?: string
+	conversationContext?: string
 	refreshKey: number
 	supermemoryApiKey: string
 	supermemoryKeyReady: boolean
@@ -50,7 +50,9 @@ export function ContextPanel({
 				signal: controller.signal,
 				body: JSON.stringify({
 					containerTag: normalizedContainerTag,
-					...(useQuery && lastUserMessage ? { query: lastUserMessage } : {}),
+					...(useQuery && conversationContext
+						? { query: conversationContext }
+						: {}),
 					...(supermemoryApiKey.trim()
 						? {
 								apiKeys: {
@@ -76,7 +78,7 @@ export function ContextPanel({
 		}
 	}, [
 		containerTag,
-		lastUserMessage,
+		conversationContext,
 		useQuery,
 		supermemoryApiKey,
 		supermemoryKeyReady,
