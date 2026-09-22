@@ -38,6 +38,7 @@ export {
 	supermemoryProfileSearch,
 	buildMemoriesText,
 	extractQueryText,
+	buildConversationContextQuery,
 	getLastUserMessageText,
 	type BuildMemoriesTextOptions,
 	type GenericMessage,

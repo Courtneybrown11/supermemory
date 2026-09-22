@@ -10,3 +10,8 @@ export {
 	DEFAULT_VALUES,
 	getContainerTags,
 } from "./tools-shared"
+
+export {
+	buildConversationContextQuery,
+	buildConversationContextQuery as buildConversationMemoryQuery,
+} from "./shared"

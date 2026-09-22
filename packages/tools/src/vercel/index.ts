@@ -25,7 +25,7 @@ interface WrapVercelLanguageModelOptions {
 	/**
 	 * Memory retrieval mode:
 	 * - "profile": Retrieves user profile memories (static + dynamic) without query filtering
-	 * - "query": Searches memories based on semantic similarity to the user's message
+	 * - "query": Searches memories based on semantic similarity to the current conversation context
 	 * - "full": Combines both profile and query-based results
 	 */
 	mode?: "profile" | "query" | "full"
@@ -71,7 +71,7 @@ interface WrapVercelLanguageModelOptions {
 
 /**
  * Wraps a language model with supermemory middleware to automatically inject relevant memories
- * into the system prompt based on the user's message content.
+ * into the system prompt based on the current conversation context.
  *
  * This wrapper searches the supermemory API for relevant memories using the container tag
  * and user message, then either appends memories to an existing system prompt or creates

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { ApiKeysPanel } from "@/components/ApiKeysPanel"
 import { ContextPanel } from "@/components/ContextPanel"
 import { ToolsReferencePanel } from "@/components/ToolsReferencePanel"
+import { buildConversationContextQuery } from "@/lib/conversation-context"
 import type { MemoryDebugEntry } from "@/lib/context-api"
 import {
 	DEFAULT_MIDDLEWARE_CONFIG,
@@ -67,12 +68,21 @@ export default function AgentPlaygroundPage() {
 	const [contextRefreshKey, setContextRefreshKey] = useState(0)
 	const [leftPanel, setLeftPanel] = useState<"sdks" | "tools">("sdks")
 
-	const lastUserMessage = useMemo(() => {
-		const users = messages.filter(
-			(m): m is UserOrAssistantMessage => m.kind === "user",
-		)
-		return users.at(-1)?.content ?? ""
-	}, [messages])
+	const conversationContext = useMemo(
+		() =>
+			buildConversationContextQuery(
+				messages
+					.filter(
+						(message): message is UserOrAssistantMessage =>
+							message.kind === "user" || message.kind === "assistant",
+					)
+					.map((message) => ({
+						role: message.kind,
+						content: message.content,
+					})),
+			),
+		[messages],
+	)
 
 	const selectedSdk = useMemo(
 		() => sdks.find((s) => s.id === sdkId),
@@ -522,7 +532,7 @@ export default function AgentPlaygroundPage() {
 				<aside className="hidden w-80 shrink-0 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900/20 p-3 xl:flex xl:w-96 xl:flex-col min-h-0">
 					<ContextPanel
 						containerTag={containerTag}
-						lastUserMessage={lastUserMessage}
+						conversationContext={conversationContext}
 						refreshKey={contextRefreshKey}
 						supermemoryApiKey={supermemoryApiKey}
 						supermemoryKeyReady={supermemoryKeyReady}

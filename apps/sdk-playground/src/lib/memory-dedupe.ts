@@ -54,7 +54,7 @@ export function reconstructSdkMemoryBlock(
 				})
 	const generalSearchMemories =
 		mode !== "profile" && visibleProfile.searchResults.length > 0
-			? `Search results for user's recent message: \n${visibleProfile.searchResults
+			? `Search results for the current conversation context: \n${visibleProfile.searchResults
 					.map((memory) => `- ${memory}`)
 					.join("\n")}`
 			: ""

@@ -62,4 +62,47 @@ describe("OpenAI middleware memory context", () => {
 			content.match(/<supermemory context="user-memories" readonly>/g),
 		).toHaveLength(1)
 	})
+
+	it("queries chat memories with the full conversation context", async () => {
+		const fetchMock = vi.fn().mockResolvedValue({
+			ok: true,
+			json: async () => ({
+				profile: { static: [], dynamic: [] },
+				searchResults: { results: [] },
+			}),
+		})
+		vi.stubGlobal("fetch", fetchMock)
+		const originalCreate = vi.fn(() =>
+			Object.assign(Promise.resolve({ choices: [] }), {
+				asResponse: async () => new Response(),
+			}),
+		)
+		const client = {
+			chat: { completions: { create: originalCreate } },
+		} as unknown as OpenAI
+		const wrapped = withSupermemory(client, {
+			containerTag: "user-a",
+			customId: "conversation-a",
+			mode: "full",
+			addMemory: "never",
+		})
+
+		await wrapped.chat.completions.create({
+			model: "gpt-4o-mini",
+			messages: [
+				{ role: "user", content: "My favorite language is TypeScript." },
+				{
+					role: "assistant",
+					content: "Got it — you like TypeScript.",
+				},
+				{ role: "user", content: "What language do I prefer?" },
+			],
+		})
+
+		const request = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined
+		const body = JSON.parse(String(request?.body ?? "{}"))
+		expect(body.q).toBe(
+			"User: My favorite language is TypeScript.\n\nAssistant: Got it — you like TypeScript.\n\nUser: What language do I prefer?",
+		)
+	})
 })

@@ -9,7 +9,8 @@ export interface MemoryPromptData {
 	userMemories: string
 	/**
 	 * Pre-formatted search results text for the current query.
-	 * Contains memories retrieved based on semantic similarity to the conversation.
+	 * Contains memories retrieved based on semantic similarity to the current
+	 * conversation context.
 	 * Empty string if mode is "profile" only.
 	 */
 	generalSearchMemories: string
@@ -59,7 +60,7 @@ export type PromptTemplate = (data: MemoryPromptData) => string
 /**
  * Memory retrieval mode:
  * - "profile": Retrieves user profile memories (static + dynamic) without query filtering
- * - "query": Searches memories based on semantic similarity to the user's message
+ * - "query": Searches memories based on semantic similarity to the current conversation context
  * - "full": Combines both profile and query-based results
  */
 export type MemoryMode = "profile" | "query" | "full"
@@ -101,8 +102,8 @@ export interface ProfileStructure {
 	}
 	searchResults?: {
 		/**
-		 * Memories retrieved based on semantic similarity to the current query.
-		 * Most relevant to the immediate conversation context.
+		 * Memories retrieved based on semantic similarity to the current conversation context.
+		 * Most relevant to the immediate conversation.
 		 */
 		results: ProfileSearchResult[]
 		total: number

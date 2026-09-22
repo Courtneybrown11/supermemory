@@ -202,7 +202,7 @@ interface SupermemoryMiddlewareOptions {
 	/**
 	 * Memory retrieval mode:
 	 * - "profile": Retrieves user profile memories (static + dynamic) without query filtering
-	 * - "query": Searches memories based on semantic similarity to the user's message
+	 * - "query": Searches memories based on semantic similarity to the current conversation context
 	 * - "full": Combines both profile and query-based results
 	 */
 	mode?: MemoryMode
